@@ -49,13 +49,29 @@ async def parse():
     videos_df['publication_ts'] = [r.json().get('publication_ts', 0) for r in info_res]
 
     for comments in comments_res:
-        for comment in comments.json()['results']:
-            comments_df.loc[len(comments_df.index)] = [comment['id'], comment['video_id'], comment['user']['id'],
-                                                       comment['text'], comment['created_ts'], comment['likes_number'],
-                                                       comment['dislikes_number'], comment['replies_number']]
+        try:
+            for comment in comments.json()['results']:
+                comments_df.loc[len(comments_df.index)] = [comment['id'], comment['video_id'], comment['user']['id'],
+                                                           comment['text'], comment['created_ts'],
+                                                           comment['likes_number'], comment['dislikes_number'],
+                                                           comment['replies_number']]
+        except KeyError:
+            pass
+
+    authors_urls = list(videos_df['author_id'].drop_duplicates())
+    authors_api_urls = [f'https://rutube.ru/api/profile/user/{url}' for url in authors_urls]
+
+    authors_res = await get_stats(authors_api_urls)
+
+    authors_df['id'] = [r.json().get('id') for r in authors_res]
+    authors_df['channel_name'] = [r.json().get('name', None) for r in authors_res]
+    authors_df['channel_description'] = [r.json().get('description', None) for r in authors_res]
+    authors_df['followers'] = [r.json().get('subscribers_count', 0) for r in authors_res]
+    authors_df['is_official_channel'] = [r.json().get('is_official', 0) for r in authors_res]
 
     videos_df.to_csv('./data/videos.csv', index=False)
     comments_df.to_csv('./data/comments.csv', index=False)
+    authors_df.to_csv('./data/authors.csv', index=False)
 
 if __name__ == '__main__':
     asyncio.run(parse())
