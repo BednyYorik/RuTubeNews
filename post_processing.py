@@ -5,7 +5,7 @@ from deep_translator import GoogleTranslator
 from tqdm import tqdm
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     tags_df = pd.DataFrame(columns=['video_url', 'tag'])
     df = pd.read_csv('./data/videos.csv')
